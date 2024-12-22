@@ -6,14 +6,19 @@
 
 #include "window.h"
 #include "shader.h"
+#include "mesh.h"
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
 const char *WINDOW_TITLE = "Engine";
 
+GLenum err;
+
 GLFWwindow *window;
 
 Shader *main_shader;
+
+Mesh *triangleMesh;
 
 float vertices[] = {
     // positions         // colors
@@ -21,8 +26,6 @@ float vertices[] = {
     -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, // bottom left
     0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f    // top
 };
-
-unsigned int VBO, VAO;
 
 int init()
 {
@@ -40,67 +43,51 @@ int init()
         return -1;
     }
 
-    main_shader = shaderCreate("../assets/shaders/vertex.vs", "../assets/shaders/fragment.fs");
+    main_shader = shaderCreate("assets/shaders/vertex.vs", "assets/shaders/fragment.fs");
 
     return 0;
 }
 
-void initBuffers()
+void createObjects()
 {
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)0);
-    glEnableVertexAttribArray(0);
-
-    // color attribute
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void *)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
+    unsigned int numVertices = sizeof(vertices) / sizeof(vertices)[0];
+    triangleMesh = genMesh(&vertices, numVertices);
 }
 
 void gameLoop()
 {
-    /* Loop until the user closes the window */
     while (!glfwWindowShouldClose(window))
     {
         processInput(window);
 
-        /* Render here */
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         shaderUse(main_shader);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
+        renderMesh(triangleMesh);
         updateWindow(window);
+
+        while ((err = glGetError()) != GL_NO_ERROR)
+        {
+            printf("OpenGL error: %d\n", err);
+        }
     }
 }
 
 void terminate()
 {
     terminateWindow(window);
-
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    deleteMesh(triangleMesh);
 }
 
 int main()
 {
     if (init() == -1)
     {
-        printf("Failed inti");
+        printf("Failed init");
     }
 
-    initBuffers();
-
+    createObjects();
     gameLoop();
     terminate();
 
