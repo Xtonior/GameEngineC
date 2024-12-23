@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <io.h>
+#include <unistd.h>
 
 typedef struct Shader
 {
@@ -29,7 +29,7 @@ char *readFile(const char *filePath)
     length = ftell(f);
 
     fseek(f, 0, SEEK_SET);
-    buffer = malloc(length + 1);
+    buffer = (char *)malloc(length + 1);
 
     if (!buffer)
     {

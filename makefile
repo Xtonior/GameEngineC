@@ -10,14 +10,22 @@ ASSET_DIRS = assets
 
 # Flags
 CFLAGS = -I$(INCLUDE_DIR)/
-LDFLAGS = -L$(LIB_DIR)/GLFW -lglfw3 -lgdi32 -luser32 -lkernel32 -lshell32 -lwinmm
+
+# Platform detection
+ifeq ($(OS), Windows_NT)
+    EXE_EXT = .exe
+    LDFLAGS = -L$(LIB_DIR)/GLFW -lglfw3 -lgdi32
+else
+    EXE_EXT =
+    LDFLAGS = -lglfw -lm -ldl -lpthread
+endif
 
 # Files
 SRC = $(wildcard $(SRC_DIR)/*.c)
-OBJS = $(SRC:.c=.o)
+OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRC))
 
 # Output
-TARGET = $(BUILD_DIR)/main.exe
+TARGET = $(BUILD_DIR)/main$(EXE_EXT)
 
 # Rules
 all: $(TARGET) copy_assets
@@ -25,7 +33,8 @@ all: $(TARGET) copy_assets
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-%.o: %.c
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 copy_assets:
@@ -34,6 +43,6 @@ copy_assets:
 		cp -r $(dir)/* $(BUILD_DIR)/$(dir);)
 
 clean:
-	rm -rf $(OBJS) $(TARGET) $(foreach dir, $(ASSET_DIRS), $(BUILD_DIR)/$(dir))
+	rm -rf $(BUILD_DIR)
 
 .PHONY: all clean copy_assets
