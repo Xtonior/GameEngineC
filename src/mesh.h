@@ -52,10 +52,9 @@ Mesh *genMesh(float *vertices, unsigned int numVertices)
     return mesh;
 }
 
-void renderMesh(Mesh *mesh, Shader *shader, mat4 transform)
+void renderMesh(Mesh *mesh, Shader *shader, mat4 *transform)
 {
-    unsigned int transformLoc = glGetUniformLocation(shader->ID, "transform");
-    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, transform[0]);
+    shaderSetMat4(shader, "model", transform);
 
     glBindVertexArray(mesh->VAO);
     glDrawArrays(GL_TRIANGLES, 0, mesh->numVertices);

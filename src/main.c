@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "cglm/affine-pre.h"
+#include "cglm/cam.h"
+#include "cglm/mat4.h"
+#include "cglm/types.h"
 #include "window.h"
 #include "shader.h"
 #include "mesh.h"
@@ -71,38 +75,65 @@ int init()
 void createObjects()
 {
     unsigned int numVertices = sizeof(vertices) / sizeof(vertices)[0];
-    triangleMesh = genMesh(&vertices, numVertices);
+    triangleMesh = genMesh(vertices, numVertices);
 
-    mainCamera = CreateCamera((vec3){0.0f, 5.0f, 0.0f}, 10.0f, 0.1f, (vec3){1.0f, 0.0f, 0.0f});
+    mainCamera = CreateCamera((vec3){0.0f, 0.0f, -2.0f}, 10.0f, 0.1f);
 }
 
 void gameLoop()
 {
     while (!glfwWindowShouldClose(window))
     {
+        glEnable(GL_DEPTH_TEST);
+
         float currentFrame = (float)(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
         processInput(window);
         cameraInput(deltaTime);
+        ProcessMouseMovement(mainCamera, 0.0f, 0.0f, 1);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shaderUse(main_shader);
 
-        mat4 cameraView;
         mat4 cameraProjection;
-        glm_mat4_identity(cameraView);
-        glm_mat4_identity(cameraProjection);
+        // glm_mat4_identity(cameraProjection);
 
-        vec3 pos = {1.0f, 0.0f, 0.0f};
-        mat4 trans;
-        glm_mat4_identity(trans);
-        glm_translate(trans, pos);
-        renderMesh(triangleMesh, main_shader, trans);
+        glm_perspective(glm_rad(60.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f, cameraProjection);
+        // glm_perspective(60.0f, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f, cameraProjection);
+        // glm_ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f, cameraProjection);
+
+        mat4 cameraView;
+        // glm_mat4_identity(cameraView);
+
+        GetViewMatrix(mainCamera, &cameraView);
+
+        printf("View Matrix:\n");
+        for (int i = 0; i < 4; i++) 
+        {
+            printf("%f %f %f %f\n", cameraView[i][0], cameraView[i][1], cameraView[i][2], cameraView[i][3]);
+        }
+
+        printf("Projection Matrix:\n");
+        for (int i = 0; i < 4; i++) {
+            printf("%f %f %f %f\n", cameraProjection[i][0], cameraProjection[i][1], cameraProjection[i][2], cameraProjection[i][3]);
+        }
+
+        shaderSetMat4(main_shader, "projection", &cameraProjection);
+        shaderSetMat4(main_shader, "view", &cameraView);
+
+        mat4 triModel;
+        vec3 triPos = {0.0f, 0.0f, -3.0f};
+        glm_mat4_identity(triModel);
+        glm_translate(triModel, triPos);
+
+        renderMesh(triangleMesh, main_shader, &triModel);
         updateWindow(window);
+
+        // printf("%f, %f, %f\n", mainCamera->Front[0], mainCamera->Front[1], mainCamera->Front[2]);
 
         while ((err = glGetError()) != GL_NO_ERROR)
         {

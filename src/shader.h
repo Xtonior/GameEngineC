@@ -1,6 +1,7 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#include "cglm/types.h"
 #include <glad/glad.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -144,6 +145,12 @@ void shaderSetInt(const Shader *shader, const char *name, int value)
 void shaderSetFloat(const Shader *shader, const char *name, float value)
 {
     glUniform1f(glGetUniformLocation(shader->ID, name), value);
+}
+
+void shaderSetMat4(const Shader *shader, const char *name, const mat4 *mat)
+{
+    unsigned int loc = glGetUniformLocation(shader->ID, name); 
+    glUniformMatrix4fv(loc, 1, GL_FALSE, *mat[0]);
 }
 
 // Cleanup shader
