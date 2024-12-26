@@ -1,0 +1,5 @@
+[
+{ "directory": "/home/xtonior/Documents/Projects/C/GameEngineC", "command": "clang -Iinclude/ -c src/glad.c -o bin/glad.o", "file": "src/glad.c" },
+{ "directory": "/home/xtonior/Documents/Projects/C/GameEngineC", "command": "clang -Iinclude/ -c src/main.c -o bin/main.o", "file": "src/main.c" },
+{ "directory": "/home/xtonior/Documents/Projects/C/GameEngineC", "command": "clang -Iinclude/ -c src/window.c -o bin/window.o", "file": "src/window.c" }
+]

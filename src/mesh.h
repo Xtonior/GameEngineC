@@ -3,8 +3,12 @@
 
 #include <glad/glad.h>
 
+#include <cglm/types.h>
+
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "shader.h"
 
 typedef struct Mesh
 {
@@ -48,8 +52,11 @@ Mesh *genMesh(float *vertices, unsigned int numVertices)
     return mesh;
 }
 
-void renderMesh(Mesh *mesh)
+void renderMesh(Mesh *mesh, Shader *shader, mat4 transform)
 {
+    unsigned int transformLoc = glGetUniformLocation(shader->ID, "transform");
+    glUniformMatrix4fv(transformLoc, 1, GL_FALSE, transform[0]);
+
     glBindVertexArray(mesh->VAO);
     glDrawArrays(GL_TRIANGLES, 0, mesh->numVertices);
 }

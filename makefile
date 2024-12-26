@@ -8,16 +8,15 @@ LIB_DIR = lib
 BUILD_DIR = bin
 ASSET_DIRS = assets
 
-# Flags
 CFLAGS = -I$(INCLUDE_DIR)/
 
 # Platform detection
 ifeq ($(OS), Windows_NT)
     EXE_EXT = .exe
-    LDFLAGS = -L$(LIB_DIR)/GLFW -lglfw3 -lgdi32
+    LDFLAGS = -L$(LIB_DIR)/GLFW/Win -Wl,-rpath,$(LIB_DIR)/GLFW/Win -lglfw3 -lgdi32
 else
     EXE_EXT =
-    LDFLAGS = -lglfw -lm -ldl -lpthread
+    LDFLAGS = -L$(LIB_DIR)/GLFW/Linux -L$(LIB_DIR)/cglm/Linux -Wl,-rpath,$(LIB_DIR)/GLFW/Linux -lm -ldl -lpthread -lglfw3
 endif
 
 # Files
@@ -45,4 +44,13 @@ copy_assets:
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: all clean copy_assets
+# Rule to generate compile_commands.json
+compile_commands.json:
+	@echo "Generating compile_commands.json..."
+	rm -f compile_commands.json
+	$(foreach src, $(SRC), \
+	    echo '{ "directory": "$(shell pwd)", "command": "$(CC) $(CFLAGS) -c $(src) -o $(BUILD_DIR)/$(notdir $(src:.c=.o))", "file": "$(src)" },' >> compile_commands.json;)
+	@sed -i '$$ s/,$$//' compile_commands.json  # Remove trailing comma
+	@echo "[" > tmp.json && cat compile_commands.json >> tmp.json && echo "]" >> tmp.json && mv tmp.json compile_commands.json
+
+.PHONY: all clean copy_assets compile_commands.json
