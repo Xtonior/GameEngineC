@@ -61,6 +61,7 @@ html/
 .vscode
 *.code-workspace
 .history
+compile_commands.json
 
 ################################
 ###########   VS    ############
