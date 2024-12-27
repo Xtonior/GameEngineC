@@ -11,6 +11,7 @@
 #include "cglm/mat4.h"
 #include "cglm/types.h"
 #include "window.h"
+#include "editorUi.h"
 #include "shader.h"
 #include "mesh.h"
 #include "camera.h"
@@ -32,6 +33,8 @@ Mesh *triangleMesh;
 
 Camera *mainCamera;
 
+float mouseDeltaX, mouseDeltaY;
+
 float vertices[] = {
     // positions         // colors
 	0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,  // bottom right
@@ -49,6 +52,10 @@ void cameraInput(float dt)
         ProcessKeyboard(mainCamera, LEFT, dt);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         ProcessKeyboard(mainCamera, RIGHT, dt);
+
+    getMouse(&mouseDeltaX, &mouseDeltaY);
+
+    ProcessMouseMovement(mainCamera, mouseDeltaX, mouseDeltaY, 1);
 }
 
 int init()
@@ -67,6 +74,8 @@ int init()
         return -1;
     }
 
+    editorui_init(window);
+
     main_shader = shaderCreate("assets/shaders/vertex.vs", "assets/shaders/fragment.fs");
 
     return 0;
@@ -80,11 +89,18 @@ void createObjects()
     mainCamera = CreateCamera((vec3){0.0f, 0.0f, -2.0f}, 10.0f, 0.1f);
 }
 
+void drawUI()
+{
+
+}
+
 void gameLoop()
 {
     while (!glfwWindowShouldClose(window))
     {
         glEnable(GL_DEPTH_TEST);
+
+        editorui_update();
 
         float currentFrame = (float)(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
@@ -111,17 +127,6 @@ void gameLoop()
 
         GetViewMatrix(mainCamera, &cameraView);
 
-        printf("View Matrix:\n");
-        for (int i = 0; i < 4; i++) 
-        {
-            printf("%f %f %f %f\n", cameraView[i][0], cameraView[i][1], cameraView[i][2], cameraView[i][3]);
-        }
-
-        printf("Projection Matrix:\n");
-        for (int i = 0; i < 4; i++) {
-            printf("%f %f %f %f\n", cameraProjection[i][0], cameraProjection[i][1], cameraProjection[i][2], cameraProjection[i][3]);
-        }
-
         shaderSetMat4(main_shader, "projection", &cameraProjection);
         shaderSetMat4(main_shader, "view", &cameraView);
 
@@ -131,10 +136,12 @@ void gameLoop()
         glm_translate(triModel, triPos);
 
         renderMesh(triangleMesh, main_shader, &triModel);
+        editorui_render(window);
+        
         updateWindow(window);
 
         // printf("%f, %f, %f\n", mainCamera->Front[0], mainCamera->Front[1], mainCamera->Front[2]);
-
+        
         while ((err = glGetError()) != GL_NO_ERROR)
         {
             printf("OpenGL error: %d\n", err);
@@ -145,6 +152,7 @@ void gameLoop()
 void terminate()
 {
     deleteMesh(triangleMesh);
+    editorui_terminate();
     terminateWindow(window);
 }
 

@@ -6,6 +6,7 @@
 GLFWwindow *createWindow(int w, int h, const char *title);
 int initWindow(GLFWwindow *window);
 void updateWindow(GLFWwindow *window);
+void getMouse(float *offsetX, float *offsetY);
 void processInput(GLFWwindow *window);
 void terminateWindow(GLFWwindow *window);
 

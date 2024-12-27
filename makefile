@@ -16,7 +16,7 @@ ifeq ($(OS), Windows_NT)
     LDFLAGS = -L$(LIB_DIR)/GLFW/Win -Wl,-rpath,$(LIB_DIR)/GLFW/Win -lglfw3 -lgdi32
 else
     EXE_EXT =
-    LDFLAGS = -L$(LIB_DIR)/GLFW/Linux -L$(LIB_DIR)/cglm/Linux -Wl,-rpath,$(LIB_DIR)/GLFW/Linux -lm -ldl -lpthread -lglfw3
+    LDFLAGS = -L$(LIB_DIR)/GLFW/Linux -L$(LIB_DIR)/cglm/Linux -Wl,-rpath, $(LIB_DIR)/GLFW/Linux -lm -ldl -lpthread -lglfw3
 endif
 
 # Files
