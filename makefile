@@ -13,9 +13,15 @@ CFLAGS = -I$(INCLUDE_DIR)/
 # Platform detection
 ifeq ($(OS), Windows_NT)
     EXE_EXT = .exe
-    LDFLAGS = -L$(LIB_DIR)/GLFW/Win -Wl,-rpath,$(LIB_DIR)/GLFW/Win -lglfw3 -lgdi32
+    MKDIR = if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
+    COPY = xcopy /E /I /Q $(subst /,\,$(1)) $(subst /,\,$(2))
+    RM = rmdir /S /Q $(subst /,\,$(1))
+    LDFLAGS = -L$(LIB_DIR)/GLFW/Win -Wl,$(LIB_DIR)/GLFW/Win -lglfw3 -lgdi32
 else
     EXE_EXT =
+    MKDIR = mkdir -p $(1)
+    COPY = cp -r $(1)/* $(2)/
+    RM = rm -rf $(1)
     LDFLAGS = -L$(LIB_DIR)/GLFW/Linux -L$(LIB_DIR)/cglm/Linux -Wl,-rpath, $(LIB_DIR)/GLFW/Linux -lm -ldl -lpthread -lglfw3
 endif
 
@@ -33,16 +39,15 @@ $(TARGET): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(BUILD_DIR)
+	$(call MKDIR,$(BUILD_DIR))
 	$(CC) $(CFLAGS) -c $< -o $@
 
 copy_assets:
-	@$(foreach dir, $(ASSET_DIRS), \
-		mkdir -p $(BUILD_DIR)/$(dir); \
-		cp -r $(dir)/* $(BUILD_DIR)/$(dir);)
+	$(call MKDIR,$(BUILD_DIR)/assets)
+	$(call COPY,assets,$(BUILD_DIR)/assets)
 
 clean:
-	rm -rf $(BUILD_DIR)
+	$(call RM,$(BUILD_DIR))
 
 # Rule to generate compile_commands.json
 compile_commands.json:
