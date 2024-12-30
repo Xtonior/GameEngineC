@@ -6,7 +6,7 @@
 #include "window.h"
 
 bool firstMouse = true;
-bool showCursor = true;
+bool showCursor = false;
 
 float lastX, lastY;
 float xoffset, yoffset;

@@ -10,6 +10,7 @@
 #include "cglm/cam.h"
 #include "cglm/mat4.h"
 #include "cglm/types.h"
+#include "viewport.h"
 #include "window.h"
 #include "editorUi.h"
 #include "shader.h"
@@ -59,6 +60,19 @@ void cameraInput(float dt)
     // ProcessMouseMovement(mainCamera, mouseDeltaX, mouseDeltaY, 1);
 }
 
+void createObjects()
+{
+    unsigned int numVertices = sizeof(vertices) / sizeof(vertices)[0];
+    triangleMesh = genMesh(vertices, numVertices);
+
+    mainCamera = CreateCamera((vec3){0.0f, 0.0f, -2.0f}, 10.0f, 0.1f);
+
+    viewport_init();
+}
+
+int vp_w = 500;
+int vp_h = 400;
+
 unsigned int vpmain_fbo;
 unsigned int vpmain_rbo;
 unsigned int vpmain_tex;
@@ -68,37 +82,55 @@ int initMainViewport()
     return createFramebuffer(&vpmain_fbo, &vpmain_rbo, &vpmain_tex, 600, 400);
 }
 
-int init()
+void renderMainViewport()
 {
-    window = createWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    if (initWindow(window) == -1)
-    {
-        printf("Failed to create GLFW window");
-        return -1;
-    }
+    bindFramebuffer(&vpmain_fbo);
 
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        printf("Failed to initialize GLAD");
-        return -1;
-    }
+    resizeFramebuffer(&vpmain_tex, &vpmain_rbo, vp_w, vp_h);
+    // glViewport(0, 0, vp_w, vp_h); 
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    editorui_init(window);
+    editorui_renderViewport(&vpmain_tex, &vp_w, &vp_h);
+    editorui_render(window);
 
-    main_shader = shaderCreate("assets/shaders/vertex.vs", "assets/shaders/fragment.fs");
-
-    if (initMainViewport() == -1) return -1;
-
-    return 0;
+    // Unbind framebuffer after rendering
+    unbindFramebuffer();
 }
 
-void createObjects()
-{
-    unsigned int numVertices = sizeof(vertices) / sizeof(vertices)[0];
-    triangleMesh = genMesh(vertices, numVertices);
+int vpo_w = 500;
+int vpo_h = 400;
 
-    mainCamera = CreateCamera((vec3){0.0f, 0.0f, -2.0f}, 10.0f, 0.1f);
+unsigned int vporth_fbo;
+unsigned int vporth_rbo;
+unsigned int vporth_tex;
+
+int initOrthoViewport()
+{
+    return createFramebuffer(&vporth_fbo, &vporth_rbo, &vporth_tex, 600, 400);
+}
+
+void renderOrthoViewport()
+{
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    bindFramebuffer(&vporth_fbo);
+
+    resizeFramebuffer(&vporth_tex, &vporth_rbo, vpo_w, vpo_h);
+    // glViewport(0, 0, vp_w, vp_h); 
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Todo: only one 'render' function per nuklear window
+    editorui_renderViewport(&vporth_tex, &vpo_w, &vpo_h);
+    editorui_render(window);
+
+    // Unbind framebuffer after rendering
+    unbindFramebuffer();
 }
 
 void renderScene()
@@ -109,25 +141,7 @@ void renderScene()
     glm_translate(triModel, triPos);
 
     renderMesh(triangleMesh, main_shader, &triModel);
-}
-
-int vp_w = 150;
-int vp_h = 70;
-
-void renderMainViewport()
-{
-    bindFramebuffer(&vpmain_fbo);
-
-    resizeFramebuffer(&vpmain_tex, &vpmain_rbo, vp_w, vp_h);
-    // glViewport(0, 0, vp_w, vp_h); 
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    editorui_renderViewport(&vpmain_tex, &vp_w, &vp_h);
-    renderScene();
-
-    // Unbind framebuffer after rendering
-    unbindFramebuffer();
+    viewport_renderOrtho(triangleMesh, &triModel, vpo_w, vpo_h);
 }
 
 void proceedCamera()
@@ -162,8 +176,11 @@ void gameLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         proceedCamera();
-        // renderScene();
+
         renderMainViewport();
+        renderOrthoViewport();
+        renderScene();
+
         editorui_render(window);
         updateWindow(window);
         
@@ -179,6 +196,32 @@ void terminate()
     deleteMesh(triangleMesh);
     editorui_terminate();
     terminateWindow(window);
+}
+
+int init()
+{
+    window = createWindow(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE);
+
+    if (initWindow(window) == -1)
+    {
+        printf("Failed to create GLFW window");
+        return -1;
+    }
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+    {
+        printf("Failed to initialize GLAD");
+        return -1;
+    }
+
+    editorui_init(window);
+
+    main_shader = shaderCreate("assets/shaders/vertex.vs", "assets/shaders/fragment.fs");
+
+    if (initMainViewport() == -1) return -1;
+    if (initOrthoViewport() == -1) return -1;
+
+    return 0;
 }
 
 int main()

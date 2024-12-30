@@ -1,7 +1,6 @@
 #ifndef EDITORUI_H
 #define EDITORUI_H
 
-#include <stdio.h>
 #include <GLFW/glfw3.h>
 
 #define NK_INCLUDE_FIXED_TYPES
@@ -48,7 +47,7 @@ void editorui_update()
 void editorui_renderViewport(unsigned int *texture, int *w, int *h)
 {
     struct nk_context *ctx = &glfw.ctx;
-    struct nk_rect rect = nk_rect(50, 50, *w, *h);
+    struct nk_rect rect = nk_rect((*w * 0.5), (*h * 0.5), *w, *h);
 
     if (nk_begin(ctx, "Scene", rect, NK_WINDOW_BORDER | NK_WINDOW_TITLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE))
     {
