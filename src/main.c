@@ -15,6 +15,7 @@
 #include "shader.h"
 #include "mesh.h"
 #include "camera.h"
+#include "framebuffer.h"
 
 const int WINDOW_WIDTH = 800;
 const int WINDOW_HEIGHT = 600;
@@ -55,7 +56,16 @@ void cameraInput(float dt)
 
     getMouse(&mouseDeltaX, &mouseDeltaY);
 
-    ProcessMouseMovement(mainCamera, mouseDeltaX, mouseDeltaY, 1);
+    // ProcessMouseMovement(mainCamera, mouseDeltaX, mouseDeltaY, 1);
+}
+
+unsigned int vpmain_fbo;
+unsigned int vpmain_rbo;
+unsigned int vpmain_tex;
+
+int initMainViewport()
+{
+    return createFramebuffer(&vpmain_fbo, &vpmain_rbo, &vpmain_tex, 600, 400);
 }
 
 int init()
@@ -78,6 +88,8 @@ int init()
 
     main_shader = shaderCreate("assets/shaders/vertex.vs", "assets/shaders/fragment.fs");
 
+    if (initMainViewport() == -1) return -1;
+
     return 0;
 }
 
@@ -89,9 +101,45 @@ void createObjects()
     mainCamera = CreateCamera((vec3){0.0f, 0.0f, -2.0f}, 10.0f, 0.1f);
 }
 
-void drawUI()
+void renderScene()
 {
+    mat4 triModel;
+    vec3 triPos = {0.0f, 0.0f, -3.0f};
+    glm_mat4_identity(triModel);
+    glm_translate(triModel, triPos);
 
+    renderMesh(triangleMesh, main_shader, &triModel);
+}
+
+int vp_w = 150;
+int vp_h = 70;
+
+void renderMainViewport()
+{
+    bindFramebuffer(&vpmain_fbo);
+
+    resizeFramebuffer(&vpmain_tex, &vpmain_rbo, vp_w, vp_h);
+    // glViewport(0, 0, vp_w, vp_h); 
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    editorui_renderViewport(&vpmain_tex, &vp_w, &vp_h);
+    renderScene();
+
+    // Unbind framebuffer after rendering
+    unbindFramebuffer();
+}
+
+void proceedCamera()
+{
+    shaderUse(main_shader);
+
+    mat4 cameraProjection;
+    glm_perspective(glm_rad(60.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f, cameraProjection);
+    mat4 cameraView;
+    GetViewMatrix(mainCamera, &cameraView);
+    shaderSetMat4(main_shader, "projection", &cameraProjection);
+    shaderSetMat4(main_shader, "view", &cameraView);
 }
 
 void gameLoop()
@@ -113,34 +161,11 @@ void gameLoop()
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        shaderUse(main_shader);
-
-        mat4 cameraProjection;
-        // glm_mat4_identity(cameraProjection);
-
-        glm_perspective(glm_rad(60.0f), (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f, cameraProjection);
-        // glm_perspective(60.0f, (float)WINDOW_WIDTH / (float)WINDOW_HEIGHT, 0.1f, 100.0f, cameraProjection);
-        // glm_ortho(-1.0f, 1.0f, -1.0f, 1.0f, 0.1f, 10.0f, cameraProjection);
-
-        mat4 cameraView;
-        // glm_mat4_identity(cameraView);
-
-        GetViewMatrix(mainCamera, &cameraView);
-
-        shaderSetMat4(main_shader, "projection", &cameraProjection);
-        shaderSetMat4(main_shader, "view", &cameraView);
-
-        mat4 triModel;
-        vec3 triPos = {0.0f, 0.0f, -3.0f};
-        glm_mat4_identity(triModel);
-        glm_translate(triModel, triPos);
-
-        renderMesh(triangleMesh, main_shader, &triModel);
+        proceedCamera();
+        // renderScene();
+        renderMainViewport();
         editorui_render(window);
-        
         updateWindow(window);
-
-        // printf("%f, %f, %f\n", mainCamera->Front[0], mainCamera->Front[1], mainCamera->Front[2]);
         
         while ((err = glGetError()) != GL_NO_ERROR)
         {

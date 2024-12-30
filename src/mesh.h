@@ -58,6 +58,8 @@ void renderMesh(Mesh *mesh, Shader *shader, mat4 *transform)
 
     glBindVertexArray(mesh->VAO);
     glDrawArrays(GL_TRIANGLES, 0, mesh->numVertices);
+
+    glBindVertexArray(0);
 }
 
 void deleteMesh(Mesh *mesh)
